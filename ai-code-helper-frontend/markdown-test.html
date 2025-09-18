@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown功能测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 50%, #90caf9 100%);
+            min-height: 100vh;
+        }
+        .test-container {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        .test-button {
+            background: linear-gradient(135deg, #1976d2, #1565c0);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            margin: 0.5rem;
+            font-weight: 600;
+        }
+        .test-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.4);
+        }
+        .result {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 0.5rem;
+            border: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>📝 Markdown功能测试</h1>
+        <p>点击下面的按钮测试不同的Markdown功能：</p>
+        
+        <button class="test-button" onclick="testBasicMarkdown()">基础Markdown</button>
+        <button class="test-button" onclick="testCodeBlock()">代码块</button>
+        <button class="test-button" onclick="testTable()">表格</button>
+        <button class="test-button" onclick="testComplex()">复杂格式</button>
+        
+        <div id="result" class="result" style="display: none;"></div>
+    </div>
+
+    <script>
+        // 模拟marked库的功能
+        function parseMarkdown(text) {
+            // 简单的Markdown解析器（仅用于演示）
+            let html = text
+                .replace(/^# (.*$)/gm, '<h1>$1</h1>')
+                .replace(/^## (.*$)/gm, '<h2>$1</h2>')
+                .replace(/^### (.*$)/gm, '<h3>$1</h3>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/`(.*?)`/g, '<code>$1</code>')
+                .replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code class="language-$1">$2</code></pre>')
+                .replace(/^\| (.+) \|$/gm, '<tr><td>$1</td></tr>')
+                .replace(/^\| (.+) \| (.+) \|$/gm, '<tr><td>$1</td><td>$2</td></tr>')
+                .replace(/^\| (.+) \| (.+) \| (.+) \|$/gm, '<tr><td>$1</td><td>$2</td><td>$3</td></tr>')
+                .replace(/^- (.*$)/gm, '<li>$1</li>')
+                .replace(/^(\d+)\. (.*$)/gm, '<li>$1. $2</li>')
+                .replace(/\n/g, '<br>')
+            
+            return html
+        }
+
+        function showResult(markdown, title) {
+            const resultDiv = document.getElementById('result')
+            const html = parseMarkdown(markdown)
+            
+            resultDiv.innerHTML = `
+                <h3>${title}</h3>
+                <div style="margin: 1rem 0;">
+                    <strong>Markdown源码：</strong>
+                    <pre style="background: #f5f5f5; padding: 1rem; border-radius: 0.25rem; overflow-x: auto;">${markdown}</pre>
+                </div>
+                <div style="margin: 1rem 0;">
+                    <strong>渲染效果：</strong>
+                    <div style="border: 1px solid #e0e0e0; padding: 1rem; border-radius: 0.25rem; background: white;">${html}</div>
+                </div>
+            `
+            resultDiv.style.display = 'block'
+        }
+
+        function testBasicMarkdown() {
+            const markdown = `# 基础Markdown测试
+
+这是一个**粗体文本**和*斜体文本*的示例。
+
+## 列表示例
+
+- 项目1
+- 项目2
+- 项目3
+
+### 编号列表
+
+1. 第一步
+2. 第二步
+3. 第三步
+
+## 代码示例
+
+这是一个\`内联代码\`的示例。`
+            
+            showResult(markdown, '基础Markdown功能')
+        }
+
+        function testCodeBlock() {
+            const markdown = `# 代码块测试
+
+## Java代码示例
+
+\`\`\`java
+public class HelloWorld {
+    public static void main(String[] args) {
+        System.out.println("Hello, World!");
+        
+        // 计算两个数的和
+        int a = 10;
+        int b = 20;
+        int sum = a + b;
+        System.out.println("Sum: " + sum);
+    }
+}
+\`\`\`
+
+## JavaScript代码示例
+
+\`\`\`javascript
+function greet(name) {
+    return \`Hello, \${name}!\`;
+}
+
+const message = greet("World");
+console.log(message);
+\`\`\``
+            
+            showResult(markdown, '代码块功能')
+        }
+
+        function testTable() {
+            const markdown = `# 表格测试
+
+## 技术栈对比
+
+| 技术栈 | 难度 | 推荐指数 | 学习时间 |
+|--------|------|----------|----------|
+| Java   | 中等 | ⭐⭐⭐⭐⭐ | 3-6个月 |
+| Python | 简单 | ⭐⭐⭐⭐ | 1-3个月 |
+| Go     | 中等 | ⭐⭐⭐ | 2-4个月 |
+| Rust   | 困难 | ⭐⭐⭐⭐ | 6-12个月 |
+
+## 面试题分类
+
+| 类型 | 数量 | 重要性 |
+|------|------|--------|
+| 基础题 | 50+ | 高 |
+| 算法题 | 30+ | 中 |
+| 系统设计 | 10+ | 高 |`
+            
+            showResult(markdown, '表格功能')
+        }
+
+        function testComplex() {
+            const markdown = `# 复杂格式测试
+
+## 学习路线规划
+
+### Phase 1: 基础阶段
+- **目标**: 掌握编程基础
+- **时间**: 1-2个月
+- **内容**:
+  - 语法基础
+  - 数据结构
+  - 算法入门
+
+### Phase 2: 进阶阶段
+- **目标**: 深入学习
+- **时间**: 2-3个月
+- **内容**:
+  - 面向对象
+  - 设计模式
+  - 框架学习
+
+## 代码示例
+
+\`\`\`java
+// 单例模式示例
+public class Singleton {
+    private static Singleton instance;
+    
+    private Singleton() {}
+    
+    public static Singleton getInstance() {
+        if (instance == null) {
+            synchronized (Singleton.class) {
+                if (instance == null) {
+                    instance = new Singleton();
+                }
+            }
+        }
+        return instance;
+    }
+}
+\`\`\`
+
+## 重要提醒
+
+> **注意**: 学习编程需要**持续练习**和**项目实践**，不要只看理论！
+
+---
+
+*祝您学习愉快！* 🎉`
+            
+            showResult(markdown, '复杂格式功能')
+        }
+    </script>
+</body>
+</html>
