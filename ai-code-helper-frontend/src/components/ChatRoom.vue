@@ -1,28 +1,49 @@
 <template>
   <div class="chat-room">
-    <ChatHeader :chat-id="chatId" />
-    <ChatMessages :messages="messages" ref="chatMessagesRef" />
+    <ChatHeader :chat-id="chatId" @new-chat="handleNewChat" />
+    <ChatMessages :messages="messages" ref="chatMessagesRef" @edit-message="handleEditMessage" />
     <ChatInput 
       :is-loading="isLoading"
+      :editing-message="editingMessage"
       @send="handleSendMessage"
       @focus="handleInputFocus"
       @blur="handleInputBlur"
+      @cancel-edit="handleCancelEdit"
     />
   </div>
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import ChatHeader from './ChatHeader.vue'
 import ChatMessages from './ChatMessages.vue'
 import ChatInput from './ChatInput.vue'
 import { useChat } from '../composables/useChat.js'
 
 // 使用聊天功能组合式函数
-const { messages, isLoading, chatId, sendMessage } = useChat()
+const { messages, isLoading, chatId, sendMessage, startNewChat } = useChat()
+
+// 编辑消息状态
+const editingMessage = ref(null)
 
 // 处理发送消息
 const handleSendMessage = (message) => {
   sendMessage(message)
+}
+
+// 处理新对话
+const handleNewChat = () => {
+  startNewChat()
+}
+
+// 处理编辑消息
+const handleEditMessage = (message) => {
+  editingMessage.value = message
+}
+
+// 处理取消编辑
+const handleCancelEdit = () => {
+  editingMessage.value = null
 }
 
 // 处理输入框焦点事件（暂时为空，可根据需要扩展）

@@ -1,5 +1,13 @@
 <template>
   <div class="chat-messages" ref="messagesContainer">
+    <!-- 复制成功提示 -->
+    <div v-if="showCopyToast" class="copy-toast">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z" fill="currentColor"/>
+      </svg>
+      已复制到剪贴板
+    </div>
+    
     <div 
       v-for="message in messages" 
       :key="message.id"
@@ -11,7 +19,22 @@
       <div class="message-content">
         <div class="message-text" v-html="formatMessageText(message.text)">
         </div>
-        <div class="message-time">{{ formatTime(message.timestamp) }}</div>
+        <div class="message-footer">
+          <div class="message-time">{{ formatTime(message.timestamp) }}</div>
+          <!-- 用户消息的操作按钮 -->
+          <div class="message-actions" v-if="message.type === 'user'">
+            <button class="action-button copy-button" @click="copyMessage(message.text)" title="复制">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" fill="currentColor"/>
+              </svg>
+            </button>
+            <button class="action-button edit-button" @click="editMessage(message)" title="编辑">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25ZM20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" fill="currentColor"/>
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
       <div class="message-avatar" v-if="message.type === 'user'">
         <div class="user-avatar">👤</div>
@@ -56,6 +79,9 @@ const props = defineProps({
 })
 
 const messagesContainer = ref(null)
+const showCopyToast = ref(false)
+
+const emit = defineEmits(['edit-message'])
 
 // formatTime函数已从API模块导入
 
@@ -81,6 +107,37 @@ const scrollToBottom = () => {
       messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
     }
   })
+}
+
+// 复制消息
+const copyMessage = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    // 显示复制成功提示
+    showCopyToast.value = true
+    setTimeout(() => {
+      showCopyToast.value = false
+    }, 2000)
+  } catch (err) {
+    console.error('复制失败:', err)
+    // 降级方案：使用传统的复制方法
+    const textArea = document.createElement('textarea')
+    textArea.value = text
+    document.body.appendChild(textArea)
+    textArea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textArea)
+    // 显示复制成功提示
+    showCopyToast.value = true
+    setTimeout(() => {
+      showCopyToast.value = false
+    }, 2000)
+  }
+}
+
+// 编辑消息
+const editMessage = (message) => {
+  emit('edit-message', message)
 }
 
 // 监听消息变化，自动滚动到底部
@@ -407,11 +464,102 @@ defineExpose({
   background: rgba(25, 118, 210, 0.05);
 }
 
+.message-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+  gap: 0.5rem;
+}
+
 .message-time {
-  font-size: 0.7rem;
-  color: #666666;
-  text-align: right;
+  font-size: 0.75rem;
+  color: #888888;
   font-weight: 400;
+  opacity: 0.8;
+}
+
+.message.user .message-time {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.message-actions {
+  display: flex;
+  gap: 0.25rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.message:hover .message-actions {
+  opacity: 1;
+}
+
+.action-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 0.375rem;
+  padding: 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+.action-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.action-button:active {
+  transform: translateY(0);
+}
+
+.copy-button:hover {
+  background: rgba(76, 175, 80, 0.2);
+  border-color: rgba(76, 175, 80, 0.4);
+}
+
+.edit-button:hover {
+  background: rgba(33, 150, 243, 0.2);
+  border-color: rgba(33, 150, 243, 0.4);
+}
+
+/* 复制提示样式 */
+.copy-toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  z-index: 1000;
+  animation: toastSlideIn 0.3s ease-out;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(10px);
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 /* 滚动条样式 */

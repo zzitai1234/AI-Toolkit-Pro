@@ -28,5 +28,5 @@ public interface AiCodeHelperService {
     Result<String> chatWithRag(String userMessage);
 
     @SystemMessage(fromResource = "system-prompt.txt")
-    Flux<String> chatStream(@MemoryId int memoryId, @UserMessage String userMessage);
+    Flux<String> chatStream(@MemoryId String memoryId, @UserMessage String userMessage);
 }

@@ -18,7 +18,7 @@ public class AiController {
     private AiCodeHelperService aiCodeHelperService;
 
     @GetMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ServerSentEvent<String>> chat(@RequestParam int memoryId, @RequestParam String message){
+    public Flux<ServerSentEvent<String>> chat(@RequestParam String memoryId, @RequestParam String message){
         log.info("收到聊天请求: memoryId={}, message={}", memoryId, message);
         
         try {

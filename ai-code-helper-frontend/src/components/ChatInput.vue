@@ -18,6 +18,13 @@
         rows="1"
       ></textarea>
       <button 
+        v-if="editingMessage"
+        @click="handleCancelEdit"
+        class="cancel-button"
+      >
+        取消
+      </button>
+      <button 
         @click="handleSend"
         :disabled="!inputMessage.trim() || isLoading"
         class="send-button"
@@ -47,6 +54,13 @@
         rows="1"
       ></textarea>
       <button 
+        v-if="editingMessage"
+        @click="handleCancelEdit"
+        class="cancel-button"
+      >
+        取消
+      </button>
+      <button 
         @click="handleSend"
         :disabled="!inputMessage.trim() || isLoading"
         class="send-button"
@@ -58,21 +72,41 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, watch } from 'vue'
 
 const props = defineProps({
   isLoading: {
     type: Boolean,
     default: false
+  },
+  editingMessage: {
+    type: Object,
+    default: null
   }
 })
 
-const emit = defineEmits(['send', 'focus', 'blur'])
+const emit = defineEmits(['send', 'focus', 'blur', 'cancel-edit'])
 
 const inputMessage = ref('')
 const inputFocused = ref(false)
 const initialInput = ref(null)
 const fixedInput = ref(null)
+
+// 监听编辑消息
+watch(() => props.editingMessage, (newMessage) => {
+  if (newMessage) {
+    inputMessage.value = newMessage.text
+    inputFocused.value = true
+    // 延迟聚焦到输入框
+    nextTick(() => {
+      if (fixedInput.value) {
+        fixedInput.value.focus()
+        // 选中所有文本
+        fixedInput.value.select()
+      }
+    })
+  }
+}, { immediate: true })
 
 // 处理输入框焦点
 const handleInputFocus = () => {
@@ -136,7 +170,18 @@ const handleSend = () => {
     fixedInput.value.style.height = 'auto'
   }
   
+  // 如果是编辑模式，发送后取消编辑状态
+  if (props.editingMessage) {
+    emit('cancel-edit')
+  }
+  
   emit('send', message)
+}
+
+// 处理取消编辑
+const handleCancelEdit = () => {
+  inputMessage.value = ''
+  emit('cancel-edit')
 }
 
 // 暴露方法给父组件
@@ -255,6 +300,31 @@ defineExpose({
   cursor: not-allowed;
   transform: none;
   box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+}
+
+.cancel-button {
+  padding: 0.625rem 1.25rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: #666666;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 0.875rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  min-width: 70px;
+}
+
+.cancel-button:hover {
+  background: rgba(255, 255, 255, 1);
+  border-color: rgba(0, 0, 0, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.cancel-button:active {
+  transform: translateY(0);
 }
 
 /* textarea滚动条样式 */

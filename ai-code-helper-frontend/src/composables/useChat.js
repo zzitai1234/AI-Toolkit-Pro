@@ -107,10 +107,37 @@ export function useChat() {
     addMessage(welcomeMessage, 'ai')
   }
 
+  // 开始新对话
+  const startNewChat = () => {
+    // 清理当前连接
+    cleanup()
+    
+    // 清空消息
+    messages.value = []
+    
+    // 重置状态
+    isLoading.value = false
+    
+    // 生成新的聊天ID
+    chatId.value = generateChatId()
+    
+    // 添加新的欢迎消息
+    const welcomeMessage = `欢迎使用AI编程小助手
+
+我可以帮你解答技术问题、制定学习计划、优化简历等。
+
+有什么可以帮您？`
+    
+    addMessage(welcomeMessage, 'ai')
+    
+    log('info', '开始新对话', { chatId: chatId.value })
+  }
+
   // 清理资源
   const cleanup = () => {
     if (eventSource) {
       eventSource.close()
+      eventSource = null
     }
   }
 
@@ -131,6 +158,7 @@ export function useChat() {
     sendMessage,
     addMessage,
     initializeChat,
+    startNewChat,
     cleanup
   }
 }
