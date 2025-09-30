@@ -20,4 +20,4 @@ langchain4j:
         model-name: qwen-plus
         api-key: ${API-KEY}
 bigmodel:
-  api-key: 9915ca91ed294603a817564f4bd54c4d.YR6v8D4fXkWFLKhM
+  api-key: ${BIG-API-KEY}

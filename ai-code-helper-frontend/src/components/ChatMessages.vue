@@ -1,12 +1,5 @@
 <template>
   <div class="chat-messages" ref="messagesContainer">
-    <!-- 复制成功提示 -->
-    <div v-if="showCopyToast" class="copy-toast">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z" fill="currentColor"/>
-      </svg>
-      已复制到剪贴板
-    </div>
     
     <div 
       v-for="message in messages" 
@@ -31,6 +24,35 @@
             <button class="action-button edit-button" @click="editMessage(message)" title="编辑">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M3 17.25V21H6.75L17.81 9.94L14.06 6.19L3 17.25ZM20.71 7.04C21.1 6.65 21.1 6.02 20.71 5.63L18.37 3.29C17.98 2.9 17.35 2.9 16.96 3.29L15.13 5.12L18.88 8.87L20.71 7.04Z" fill="currentColor"/>
+              </svg>
+            </button>
+            <button class="action-button delete-button" @click="deleteMessage(message)" title="删除">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M3 6H5H21M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6V20C19 20.5304 18.7893 21.0391 18.4142 21.4142C18.0391 21.7893 17.5304 22 17 22H7C6.46957 22 5.96086 21.7893 5.58579 21.4142C5.21071 21.0391 5 20.5304 5 20V6H19Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+          
+          <!-- AI消息的操作按钮 -->
+          <div class="message-actions" v-if="message.type === 'ai'">
+            <button class="action-button copy-button" @click="copyMessage(message.text)" title="复制">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M16 1H4C2.9 1 2 1.9 2 3V17H4V3H16V1ZM19 5H8C6.9 5 6 5.9 6 7V21C6 22.1 6.9 23 8 23H19C20.1 23 21 22.1 21 21V7C21 5.9 20.1 5 19 5ZM19 21H8V7H19V21Z" fill="currentColor"/>
+              </svg>
+            </button>
+            <button class="action-button regenerate-button" @click="regenerateMessage(message)" title="重新生成" :disabled="isLoading">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M1 4V10H7M23 20V14H17M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14L18.36 18.36A9 9 0 0 1 3.51 15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </button>
+            <button class="action-button continue-button" @click="continueMessage(message)" title="继续生成" :disabled="isLoading">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 5V19L19 12L8 5Z" fill="currentColor"/>
+              </svg>
+            </button>
+            <button class="action-button export-button" @click="exportMessage(message)" title="导出">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15M17 9L12 14M12 14L7 9M12 14V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </button>
           </div>
@@ -75,13 +97,16 @@ const props = defineProps({
   messages: {
     type: Array,
     required: true
+  },
+  isLoading: {
+    type: Boolean,
+    default: false
   }
 })
 
 const messagesContainer = ref(null)
-const showCopyToast = ref(false)
 
-const emit = defineEmits(['edit-message'])
+const emit = defineEmits(['edit-message', 'delete-message', 'regenerate-message', 'continue-message', 'export-message'])
 
 // formatTime函数已从API模块导入
 
@@ -113,11 +138,10 @@ const scrollToBottom = () => {
 const copyMessage = async (text) => {
   try {
     await navigator.clipboard.writeText(text)
-    // 显示复制成功提示
-    showCopyToast.value = true
-    setTimeout(() => {
-      showCopyToast.value = false
-    }, 2000)
+    // 使用新的Toast系统
+    if (window.$toast) {
+      window.$toast.success('已复制到剪贴板')
+    }
   } catch (err) {
     console.error('复制失败:', err)
     // 降级方案：使用传统的复制方法
@@ -127,17 +151,40 @@ const copyMessage = async (text) => {
     textArea.select()
     document.execCommand('copy')
     document.body.removeChild(textArea)
-    // 显示复制成功提示
-    showCopyToast.value = true
-    setTimeout(() => {
-      showCopyToast.value = false
-    }, 2000)
+    // 使用新的Toast系统
+    if (window.$toast) {
+      window.$toast.success('已复制到剪贴板')
+    }
   }
 }
 
 // 编辑消息
 const editMessage = (message) => {
   emit('edit-message', message)
+}
+
+// 删除消息
+const deleteMessage = (message) => {
+  if (confirm('确定要删除这条消息吗？')) {
+    emit('delete-message', message)
+  }
+}
+
+// 重新生成消息
+const regenerateMessage = (message) => {
+  if (props.isLoading) return
+  emit('regenerate-message', message)
+}
+
+// 继续生成消息
+const continueMessage = (message) => {
+  if (props.isLoading) return
+  emit('continue-message', message)
+}
+
+// 导出消息
+const exportMessage = (message) => {
+  emit('export-message', message)
 }
 
 // 监听消息变化，自动滚动到底部
@@ -530,37 +577,37 @@ defineExpose({
   border-color: rgba(33, 150, 243, 0.4);
 }
 
-/* 复制提示样式 */
-.copy-toast {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  padding: 0.75rem 1.25rem;
-  border-radius: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  z-index: 1000;
-  animation: toastSlideIn 0.3s ease-out;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-  backdrop-filter: blur(10px);
+.delete-button:hover {
+  background: rgba(244, 67, 54, 0.2);
+  border-color: rgba(244, 67, 54, 0.4);
 }
 
-@keyframes toastSlideIn {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -50%) scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
-  }
+.regenerate-button:hover {
+  background: rgba(156, 39, 176, 0.2);
+  border-color: rgba(156, 39, 176, 0.4);
 }
+
+.continue-button:hover {
+  background: rgba(255, 152, 0, 0.2);
+  border-color: rgba(255, 152, 0, 0.4);
+}
+
+.export-button:hover {
+  background: rgba(0, 150, 136, 0.2);
+  border-color: rgba(0, 150, 136, 0.4);
+}
+
+.action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-button:disabled:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: none;
+}
+
 
 /* 滚动条样式 */
 .chat-messages::-webkit-scrollbar {
